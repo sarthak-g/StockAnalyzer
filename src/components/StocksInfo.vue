@@ -3,7 +3,7 @@
     <div class="container">
       <form class="navbar-form m-2">
         <div class="input-group no-border">
-          <input type="text" value="" class="form-control" placeholder="Search..."
+          <input type="text" value="" class="form-control" placeholder="Enter company stock name ..."
           v-model="stock">
           <button @click="update(stock)" class="btn btn-white btn-round bn-just-icon ml-3">
             <i class="material-icons">search</i>
@@ -100,10 +100,21 @@
             </div>
           </div>
           <div class="col-md-8">
-            PLACEHOLDER FOR A CHART
+            <div id="CandleStick"></div>
           </div>
         </div>
 
+        <div class="row">
+          <div class="col-md-4">
+            <div id="Assets"></div>
+          </div>
+          <div class="col-md-4">
+            <div id="Liabilities"></div>
+          </div>
+          <div class="col-md-4">
+            <div id="totalassets"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -111,7 +122,7 @@
 
 <script>
 import axios from 'axios'
-
+import Plotly from 'plotly.js-dist';
 export default {
   name: 'StocksInfo',
   props: {
@@ -135,6 +146,14 @@ export default {
       grossProfitMargin: '',
       pricetosales: '',
       priceEarnings: '',
+      open: [],
+      close: [],
+      high: [],
+      low: [],
+      x: [],
+      opentemp: '',
+      xi: '',
+      trace1: {},
 
     }
   },
@@ -142,6 +161,134 @@ export default {
     update(stock){
       this.getInfo(stock);
       this.getCompanyValue(stock);
+      this.getChart(stock);
+      this.getChartPie(stock);
+    },
+    getChartPie(stock){
+      axios.get(`https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/${stock}?period=quarter`)
+      .then(res => {
+        this.cash = res.data.financials[0]['Cash and cash equivalents']
+        this.receivables = res.data.financials[0]['Receivables']
+        this.inventories = res.data.financials[0]['Inventories']
+        this.ppe = res.data.financials[0]['Property, Plant & Equipment Net']
+        this.goodwill = res.data.financials[0]['Goodwill and Intangible Assets']
+        this.LTInvestments = res.data.financials[0]['Long-term investments']
+        this.Payables = res.data.financials[0]['Payables']
+        this.STDebt = res.data.financials[0]['Short-term debt']
+        this.LTDebt = res.data.financials[0]['Long-term debt']
+        this.defRevenue = res.data.financials[0]['Deferred revenue']
+        this.taxLiab = res.data.financials[0]['Tax Liabilities']
+      })
+      .catch(err => console.log(err))
+      var data = [{
+        values: [this.cash, this.receivables, this.inventories, this.ppe, this.goodwill, this.LTInvestments],
+        labels: ['Cash', 'Receivables', 'Inventories', 'PPE', 'Goodwill', 'LT Inv.'],
+        type: 'pie',
+        textinfo: "label+percent",
+        textposition: "outside",
+        title: "Assets",
+        automargin: true
+        }];
+
+        var layout = {
+          height: 500,
+          width: 400,
+          showlegend: false
+        };
+
+        var dataliab = [{
+          type: "pie",
+          values: [this.Payables, this.STDebt, this.LTDebt, this.defRevenue, this.taxLiab],
+          labels: ['Payables', 'Short-term debt', 'Long-term debt', 'Deferred revenue', 'Tax Liabilities'],
+          type: 'pie',
+          textinfo: "label+percent",
+          textposition: "outside",
+          title: "Liabilities",
+          automargin: true
+        }];
+
+        var assetandliab = [{
+          type: "pie",
+          values: [this.cash, this.receivables, this.inventories, this.ppe, this.goodwill, this.LTInvestments,this.Payables, this.STDebt, this.LTDebt, this.defRevenue, this.taxLiab],
+          labels: ['Cash', 'Receivables', 'Inventories', 'PPE', 'Goodwill', 'LT Inv.','Payables', 'Short-term debt', 'Long-term debt', 'Deferred revenue', 'Tax Liabilities'],
+          type: 'pie',
+          textinfo: "label+percent",
+          textposition: "outside",
+          title: "Total Assets and Liabilities",
+          automargin: true
+        }];
+        
+        Plotly.newPlot('Assets', data, layout);
+        Plotly.newPlot('Liabilities', dataliab, layout);
+        Plotly.newPlot('totalassets', assetandliab, layout);
+    },
+    getChart(stock){
+      axios.get("https://financialmodelingprep.com/api/v3/historical-price-full/"+ stock +"?timeseries=300")
+      .then(res => {
+        this.open = []
+        this.close = []
+        this.high = []
+        this.low = []
+        this.x = []
+        this.opentemp = res.data.historical
+        this.xi = ''
+        for(this.xi of this.opentemp){
+          this.open.push(this.xi.open)
+          this.close.push(this.xi.close)
+          this.high.push(this.xi.high)
+          this.low.push(this.xi.low)
+          this.x.push(this.xi.date)
+        }
+      })
+      .catch(err => console.log(err))
+
+        var trace1 = {
+        
+        x: this.x, 
+        
+        close: this.close, 
+        
+        decreasing: {line: {color: '#FF0000'}}, 
+        
+        high: this.high, 
+        
+        increasing: {line: {color: '#17BECF'}}, 
+        
+        line: {color: 'rgba(31,119,180,1)'}, 
+        
+        low: this.low, 
+        
+        open: this.open, 
+        
+        type: 'candlestick', 
+        xaxis: 'x', 
+        yaxis: 'y'
+      };
+
+      var data = [trace1];
+
+      var layout = {
+        dragmode: 'zoom', 
+        margin: {
+          r: 10, 
+          t: 20, 
+          b: 20, 
+          l: 30
+        }, 
+        showlegend: false, 
+        xaxis: {
+          autorange: true, 
+          rangeslider: {range: [this.x[0], this.x[1000]]}, 
+          title: 'Date', 
+          type: 'date'
+        }, 
+        yaxis: {
+          autorange: true,
+          range: [Math.min(...this.close)-10, Math.max(...this.close)+20],
+          type: 'linear'
+        },
+      };
+      Plotly.newPlot('CandleStick', data, layout);
     },
     getCompanyValue(stock){
       axios.get("https://financialmodelingprep.com/api/v3/financial-ratios/" + stock)
