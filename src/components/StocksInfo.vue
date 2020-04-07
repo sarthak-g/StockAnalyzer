@@ -11,6 +11,7 @@
         </div> 
       </form>
 
+    <div class="outerdiv" v-if="price  !== ''">
       <div class="row">
         <div class="col-md-3">
           <div class="card card-stats card-background_first">
@@ -115,8 +116,56 @@
             <div id="totalassets"></div>
           </div>
         </div>
+
+        <div class="row">
+          <div class="col-md-12 mt-3 align-center">
+            <h4>Income Statement</h4>
+          </div>
+        </div>
+        <div class="row col-md-12">
+          <div class="card-body table-responsive">
+            <table class="table table-hover">
+              <thead class="headingcustomtable">
+                <th>In Millions</th>
+                <th>{{ ISdate[0] }}</th>
+                <th>{{ ISdate[1] }}</th>
+                <th>{{ ISdate[2] }}</th>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td>Revenue</td>
+                  <td>${{ revenue[0] }}</td>
+                  <td>${{ revenue[1] }}</td>
+                  <td>${{ revenue[2] }}</td>
+                </tr>
+                <tr>
+                  <td>COGS</td>
+                  <td>${{ COGS[0] }}</td>
+                  <td>${{ COGS[1] }}</td>
+                  <td>${{ COGS[2] }}</td>
+                </tr>
+                <tr>
+                  <td>Gross Profit</td>
+                  <td>${{ GrossProfit[0] }}</td>
+                  <td>${{ GrossProfit[1] }}</td>
+                  <td>${{ GrossProfit[2] }}</td>
+                </tr>
+                <tr>
+                  <td>Net Income</td>
+                  <td>${{ Netinc[0] }}</td>
+                  <td>${{ Netinc[1] }}</td>
+                  <td>${{ Netinc[2] }}</td>
+                </tr>
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -154,6 +203,14 @@ export default {
       opentemp: '',
       xi: '',
       trace1: {},
+      ISdate: [],
+      revenue: [],
+      COGS: [],
+      GrossProfit: [],
+      Opinc: [],
+      Netinc: [],
+      IStemp: '',
+
 
     }
   },
@@ -163,6 +220,31 @@ export default {
       this.getCompanyValue(stock);
       this.getChart(stock);
       this.getChartPie(stock);
+      this.getTable(stock);
+    },
+    getTable(stock){
+      this.revenue = [],
+      this.COGS = [],
+      this.GrossProfit = [],
+      this.Opinc = [],
+      this.Netinc = [],
+      this.ISdate = [],
+      this.IStemp = '',
+
+      axios.get(`https://financialmodelingprep.com/api/v3/financials/income-statement/${stock}?period=quarter`)
+      .then(res => {
+        this.IStemp = res.data.financials
+        this.IStemp = this.IStemp.slice(0,4)
+        for(this.xi of this.IStemp){
+          this.revenue.push(this.xi.Revenue/1000000)
+          this.COGS.push(this.xi['Cost of Revenue']/1000000)
+          this.GrossProfit.push(this.xi['Gross Profit']/1000000)
+          this.Opinc.push(this.xi['Operating Income']/1000000)
+          this.Netinc.push(this.xi['Net Income']/1000000)
+          this.ISdate.push(this.xi['date'])
+        }
+      })
+      .catch(err => console.log(err))
     },
     getChartPie(stock){
       axios.get(`https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/${stock}?period=quarter`)
@@ -376,5 +458,9 @@ a {
 .right{
   margin-left: 5px;
   margin-top: 0px;
+}
+
+.headingcustomtable{
+
 }
 </style>
