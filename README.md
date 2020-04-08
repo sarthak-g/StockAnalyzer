@@ -1,19 +1,21 @@
-# stock-analyzer
+# Stock Analyzer
 
 ## Project setup
+
+## Step 1: Clone the repository
 ```
-yarn install
+git clone https://github.com/sarthak-g/StockAnalyzer.git
+```
+## Step 2: Move inside cloned repository
+```
+cd StockAnalyzer/
+```
+## Step 3: Install dependencies
+```
+npm install
 ```
 
-### Compiles and hot-reloads for development
+## Step 3: Run app on local server
 ```
-yarn serve
+npm run serve
 ```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
