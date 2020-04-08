@@ -5,7 +5,7 @@
         <div class="input-group no-border">
           <input type="text" value="" class="form-control" placeholder="Enter company stock name ..."
           v-model="stock">
-          <button @click="update(stock)" class="btn btn-white btn-round bn-just-icon ml-3">
+          <button @click="update(stock)" class="btn btn-white btn-round bn-just-icon ml-3 search-button">
             <i class="material-icons">search</i>
           </button>
         </div> 
@@ -87,7 +87,6 @@
 
           </md-list>
         </div>
-
         <div class="row mt-5">
           <div class="col-md-4">
             <div class="card card-profile border-0">
@@ -101,66 +100,70 @@
             </div>
           </div>
           <div class="col-md-8">
+            <h4>Income Statement</h4>
+            <div class="card-body table-responsive">
+              <table class="table table-hover">
+                <thead class="headingcustomtable">
+                  <th>In Millions</th>
+                  <th>{{ ISdate[0] }}</th>
+                  <th>{{ ISdate[1] }}</th>
+                  <th>{{ ISdate[2] }}</th>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>Revenue</td>
+                    <td>${{ revenue[0] }}</td>
+                    <td>${{ revenue[1] }}</td>
+                    <td>${{ revenue[2] }}</td>
+                  </tr>
+                  <tr>
+                    <td>COGS</td>
+                    <td>${{ COGS[0] }}</td>
+                    <td>${{ COGS[1] }}</td>
+                    <td>${{ COGS[2] }}</td>
+                  </tr>
+                  <tr>
+                    <td>Gross Profit</td>
+                    <td>${{ GrossProfit[0] }}</td>
+                    <td>${{ GrossProfit[1] }}</td>
+                    <td>${{ GrossProfit[2] }}</td>
+                  </tr>
+                  <tr>
+                    <td>Net Income</td>
+                    <td>${{ Netinc[0] }}</td>
+                    <td>${{ Netinc[1] }}</td>
+                    <td>${{ Netinc[2] }}</td>
+                  </tr>
+                </tbody>
+
+              </table>
+          </div>
+
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+          <button @click="showYearlyGraph(stock)" type="button" class="btn btn-primary">Analyze yearly price</button>
+          <button @click="showBalanceSheetGraph(stock)" type="button" class="btn btn-primary ml-3">Analyze balance sheets</button>
+          </div>
+        </div>
+        <div class="row mt-5">
+          <div class="col-md-12">
             <div id="CandleStick"></div>
           </div>
         </div>
+        <div class="row piegraphs">
+            <div class="col-md-4">
+              <div id="Assets"></div>
+            </div>
+            <div class="col-md-4">
+              <div id="Liabilities"></div>
+            </div>
+            <div class="col-md-4">
+              <div id="totalassets"></div>
+            </div>
 
-        <div class="row">
-          <div class="col-md-4">
-            <div id="Assets"></div>
-          </div>
-          <div class="col-md-4">
-            <div id="Liabilities"></div>
-          </div>
-          <div class="col-md-4">
-            <div id="totalassets"></div>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-md-12 mt-3 align-center">
-            <h4>Income Statement</h4>
-          </div>
-        </div>
-        <div class="row col-md-12">
-          <div class="card-body table-responsive">
-            <table class="table table-hover">
-              <thead class="headingcustomtable">
-                <th>In Millions</th>
-                <th>{{ ISdate[0] }}</th>
-                <th>{{ ISdate[1] }}</th>
-                <th>{{ ISdate[2] }}</th>
-              </thead>
-
-              <tbody>
-                <tr>
-                  <td>Revenue</td>
-                  <td>${{ revenue[0] }}</td>
-                  <td>${{ revenue[1] }}</td>
-                  <td>${{ revenue[2] }}</td>
-                </tr>
-                <tr>
-                  <td>COGS</td>
-                  <td>${{ COGS[0] }}</td>
-                  <td>${{ COGS[1] }}</td>
-                  <td>${{ COGS[2] }}</td>
-                </tr>
-                <tr>
-                  <td>Gross Profit</td>
-                  <td>${{ GrossProfit[0] }}</td>
-                  <td>${{ GrossProfit[1] }}</td>
-                  <td>${{ GrossProfit[2] }}</td>
-                </tr>
-                <tr>
-                  <td>Net Income</td>
-                  <td>${{ Netinc[0] }}</td>
-                  <td>${{ Netinc[1] }}</td>
-                  <td>${{ Netinc[2] }}</td>
-                </tr>
-              </tbody>
-
-            </table>
-          </div>
         </div>
 
       </div>
@@ -210,7 +213,11 @@ export default {
       Opinc: [],
       Netinc: [],
       IStemp: '',
-
+      show: false,
+      show_pie: false,
+      candle_data: [],
+      candle_layout: {},
+      again: '',
 
     }
   },
@@ -218,9 +225,19 @@ export default {
     update(stock){
       this.getInfo(stock);
       this.getCompanyValue(stock);
+      this.getTable(stock);
       this.getChart(stock);
       this.getChartPie(stock);
-      this.getTable(stock);
+    },
+    showYearlyGraph(stock){
+      this.show = !this.show;
+      document.getElementById("CandleStick").style.display = (this.show == false)? "none" : "";
+      this.getChart(stock);
+    },
+    showBalanceSheetGraph(stock){
+      this.show_pie = !this.show_pie;
+      document.getElementsByClassName("piegraphs")[0].style.display = (this.show_pie == false)? "none" : "";
+      this.getChartPie(stock);
     },
     getTable(stock){
       this.revenue = [],
@@ -300,9 +317,15 @@ export default {
           automargin: true
         }];
         
-        Plotly.newPlot('Assets', data, layout);
-        Plotly.newPlot('Liabilities', dataliab, layout);
-        Plotly.newPlot('totalassets', assetandliab, layout);
+        if(document.getElementById("Assets") !== null){
+          Plotly.newPlot('Assets', data, layout);
+        }
+        if(document.getElementById("Liabilities") !== null){
+          Plotly.newPlot('Liabilities', dataliab, layout);
+        }
+        if(document.getElementById("totalassets") !== null){
+          Plotly.newPlot('totalassets', assetandliab, layout);
+        }
     },
     getChart(stock){
       axios.get("https://financialmodelingprep.com/api/v3/historical-price-full/"+ stock +"?timeseries=300")
@@ -370,7 +393,11 @@ export default {
           type: 'linear'
         },
       };
-      Plotly.newPlot('CandleStick', data, layout);
+      this.candle_data = data;
+      this.candle_layout = layout;
+      if(document.getElementById("CandleStick") !== null &&this.show == true){
+        Plotly.newPlot('CandleStick', data, layout);
+      }
     },
     getCompanyValue(stock){
       axios.get("https://financialmodelingprep.com/api/v3/financial-ratios/" + stock)
@@ -460,7 +487,4 @@ a {
   margin-top: 0px;
 }
 
-.headingcustomtable{
-
-}
 </style>
